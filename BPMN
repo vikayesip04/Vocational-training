@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPMN Діаграма - Clarity Ukraine</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f6fa;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 95%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        
+        .bpmn-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            position: relative;
+        }
+        
+        .bpmn-diagram {
+            width: 1400px;
+            height: 750px;
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        /* Swimlanes */
+        .swimlane {
+            position: absolute;
+            border: 1px solid #bdc3c7;
+            background: rgba(52, 152, 219, 0.05);
+        }
+        
+        .swimlane-header {
+            position: absolute;
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+            font-size: 11px;
+            padding: 6px;
+            writing-mode: vertical-lr;
+            text-orientation: mixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px 0 0 4px;
+        }
+        
+        /* BPMN Elements */
+        .start-event {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border: 2px solid #27ae60;
+            border-radius: 50%;
+            background: #2ecc71;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .start-event:hover {
+            transform: scale(1.1);
+        }
+        
+        .end-event {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border: 4px solid #e74c3c;
+            border-radius: 50%;
+            background: #c0392b;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .end-event:hover {
+            transform: scale(1.1);
+        }
+        
+        .task {
+            position: absolute;
+            background: #ecf0f1;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            padding: 6px;
+            font-size: 9px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .task:hover {
+            background: #d5dbdb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .subprocess {
+            position: absolute;
+            background: #e8d5f0;
+            border: 2px solid #9b59b6;
+            border-radius: 6px;
+            padding: 6px;
+            font-size: 9px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subprocess:hover {
+            background: #d7bde2;
+            transform: translateY(-2px);
+        }
+        
+        .subprocess::after {
+            content: '+';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .gateway {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background: #f39c12;
+            border: 2px solid #e67e22;
+            transform: rotate(45deg);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .gateway:hover {
+            transform: rotate(45deg) scale(1.1);
+        }
+        
+        .gateway-parallel {
+            background: #16a085;
+            border-color: #1abc9c;
+        }
+        
+        .gateway-symbol {
+            transform: rotate(-45deg);
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .intermediate-event {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border: 2px solid #f39c12;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .intermediate-event:hover {
+            transform: scale(1.1);
+        }
+        
+        .intermediate-event::after {
+            content: '⏰';
+            font-size: 12px;
+        }
+        
+        /* Sequence flows */
+        .sequence-flow {
+            position: absolute;
+            border-top: 2px solid #34495e;
+            z-index: 1;
+        }
+        
+        .sequence-flow::after {
+            content: '';
+            position: absolute;
+            right: -1px;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid #34495e;
+            border-top: 3px solid transparent;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .sequence-flow-vertical {
+            position: absolute;
+            border-left: 2px solid #34495e;
+            z-index: 1;
+        }
+        
+        .sequence-flow-vertical::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: -4px;
+            width: 0;
+            height: 0;
+            border-top: 6px solid #34495e;
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+        }
+        
+        .sequence-flow-no {
+            border-color: #e74c3c;
+        }
+        
+        .sequence-flow-no::after {
+            border-left-color: #e74c3c;
+        }
+        
+        .sequence-flow-yes {
+            border-color: #27ae60;
+        }
+        
+        .sequence-flow-yes::after {
+            border-left-color: #27ae60;
+        }
+        
+        /* Labels */
+        .element-label {
+            position: absolute;
+            font-size: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+            text-align: center;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 4px;
+            border-radius: 3px;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        
+        .flow-label {
+            position: absolute;
+            font-size: 8px;
+            color: #2c3e50;
+            font-weight: bold;
+            background: rgba(255,255,255,0.9);
+            padding: 1px 3px;
+            border-radius: 2px;
+            z-index: 10;
+        }
+        
+        .flow-label.no {
+            color: #e74c3c;
+        }
+        
+        .flow-label.yes {
+            color: #27ae60;
+        }
+        
+        .legend {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 1em;
+        }
+        
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #2c3e50;
+        }
+        
+        .legend-symbol {
+            width: 20px;
+            height: 14px;
+            border-radius: 3px;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .legend-symbol.start {
+            border-radius: 50%;
+            background: #2ecc71;
+            border-color: #27ae60;
+        }
+        
+        .legend-symbol.end {
+            border-radius: 50%;
+            background: #c0392b;
+            border-color: #e74c3c;
+            border-width: 3px;
+        }
+        
+        .legend-symbol.task {
+            background: #ecf0f1;
+            border-color: #3498db;
+        }
+        
+        .legend-symbol.subprocess {
+            background: #e8d5f0;
+            border-color: #9b59b6;
+        }
+        
+        .legend-symbol.gateway {
+            background: #f39c12;
+            border-color: #e67e22;
+            transform: rotate(45deg);
+            width: 16px;
+            height: 16px;
+        }
+        
+        .legend-symbol.gateway-parallel {
+            background: #16a085;
+            border-color: #1abc9c;
+        }
+        
+        .legend-symbol.intermediate {
+            border-radius: 50%;
+            background: white;
+            border-color: #f39c12;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Процес впровадження ERP системи Microsoft Dynamics 365 Business Central</h1>
+        <p class="subtitle">Clarity Ukraine - Консалтингова компанія</p>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <h4>Легенда</h4>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-symbol start"></div>
+                    <span>Початкова подія</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol end"></div>
+                    <span>Кінцева подія</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol task"></div>
+                    <span>Завдання</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol subprocess"></div>
+                    <span>Підпроцес</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol gateway"></div>
+                    <span>Шлюз (Рішення)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol gateway-parallel"></div>
+                    <span>Паралельний шлюз</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol intermediate"></div>
+                    <span>Проміжна подія</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bpmn-container">
+            <div class="bpmn-diagram">
+                <!-- Swimlanes -->
+                <div class="swimlane" style="left: 0; top: 0; width: 1400px; height: 100px;">
+                    <div class="swimlane-header" style="left: 0; top: 0; width: 25px; height: 100px;">Клієнт</div>
+                </div>
+                <div class="swimlane" style="left: 0; top: 100px; width: 1400px; height: 120px;">
+                    <div class="swimlane-header" style="left: 0; top: 0; width: 25px; height: 120px;">Консультанти</div>
+                </div>
+                <div class="swimlane" style="left: 0; top: 220px; width: 1400px; height: 120px;">
+                    <div class="swimlane-header" style="left: 0; top: 0; width: 25px; height: 120px;">Розробники</div>
+                </div>
+                <div class="swimlane" style="left: 0; top: 340px; width: 1400px; height: 100px;">
+                    <div class="swimlane-header" style="left: 0; top: 0; width: 25px; height: 100px;">Адмін персонал</div>
+                </div>
+                <div class="swimlane" style="left: 0; top: 440px; width: 1400px; height: 100px;">
+                    <div class="swimlane-header" style="left: 0; top: 0; width: 25px; height: 100px;">Microsoft</div>
+                </div>
+                <div class="swimlane" style="left: 0; top: 540px; width: 1400px; height: 100px;">
+                    <div class="swimlane-header" style="left: 0; top: 0; width: 25px; height: 100px;">Підтримка</div>
+                </div>
+                
+                <!-- Start Event -->
+                <div class="start-event" style="left: 40px; top: 36px;"></div>
+                <div class="element-label" style="left: 20px; top: 70px;">Запит клієнта</div>
+                
+                <!-- Client Lane -->
+                <div class="task" style="left: 90px; top: 30px; width: 80px; height: 40px;">Подача заявки</div>
+                <div class="task" style="left: 210px; top: 30px; width: 80px; height: 40px;">Презентація</div>
+                <div class="task" style="left: 330px; top: 30px; width: 80px; height: 40px;">Договір</div>
+                <div class="task" style="left: 510px; top: 30px; width: 80px; height: 40px;">Доступи</div>
+                <div class="task" style="left: 690px; top: 30px; width: 80px; height: 40px;">Навчання</div>
+                <div class="task" style="left: 810px; top: 30px; width: 80px; height: 40px;">Тестування</div>
+                <div class="task" style="left: 990px; top: 30px; width: 80px; height: 40px;">Запуск</div>
+                <div class="task" style="left: 1170px; top: 30px; width: 80px; height: 40px;">Оцінка</div>
+                
+                <!-- Consultant Lane -->
+                <div class="task" style="left: 90px; top: 140px; width: 80px; height: 40px;">Аналіз вимог</div>
+                <div class="task" style="left: 210px; top: 140px; width: 80px; height: 40px;">Презентація</div>
+                <div class="task" style="left: 330px; top: 140px; width: 80px; height: 40px;">Планування</div>
+                <div class="task" style="left: 450px; top: 140px; width: 80px; height: 40px;">Вимоги</div>
+                <div class="task" style="left: 570px; top: 140px; width: 80px; height: 40px;">Налаштування</div>
+                <div class="task" style="left: 690px; top: 140px; width: 80px; height: 40px;">Міграція</div>
+                <div class="task" style="left: 810px; top: 140px; width: 80px; height: 40px;">Тренінги</div>
+                <div class="task" style="left: 930px; top: 140px; width: 80px; height: 40px;">Тестування</div>
+                <div class="task" style="left: 1050px; top: 140px; width: 80px; height: 40px;">Навчання</div>
+                <div class="task" style="left: 1170px; top: 140px; width: 80px; height: 40px;">Документи</div>
+                <div class="task" style="left: 1290px; top: 140px; width: 80px; height: 40px;">Передача</div>
+                
+                <!-- Developer Lane -->
+                <div class="task" style="left: 210px; top: 260px; width: 80px; height: 40px;">Тех. аналіз</div>
+                <div class="task" style="left: 330px; top: 260px; width: 80px; height: 40px;">Тест. середовище</div>
+                <div class="subprocess" style="left: 450px; top: 250px; width: 80px; height: 60px;">Кастомізації</div>
+                <div class="task" style="left: 570px; top: 260px; width: 80px; height: 40px;">Розгортання</div>
+                <div class="task" style="left: 690px; top: 260px; width: 80px; height: 40px;">Безпека</div>
+                <div class="task" style="left: 810px; top: 260px; width: 80px; height: 40px;">Тестування</div>
+                <div class="task" style="left: 930px; top: 260px; width: 80px; height: 40px;">Виправлення</div>
+                <div class="task" style="left: 1050px; top: 260px; width: 80px; height: 40px;">Розгортання</div>
+                <div class="task" style="left: 1170px; top: 260px; width: 80px; height: 40px;">Моніторинг</div>
+                
+                <!-- Admin Lane -->
+                <div class="task" style="left: 90px; top: 370px; width: 80px; height: 40px;">Договір</div>
+                <div class="task" style="left: 330px; top: 370px; width: 80px; height: 40px;">Фін. план</div>
+                <div class="task" style="left: 450px; top: 370px; width: 80px; height: 40px;">Ліцензії</div>
+                <div class="task" style="left: 690px; top: 370px; width: 80px; height: 40px;">Бюджет</div>
+                <div class="task" style="left: 930px; top: 370px; width: 80px; height: 40px;">Звітність</div>
+                <div class="task" style="left: 1170px; top: 370px; width: 80px; height: 40px;">Закриття</div>
+                
+                <!-- Microsoft Lane -->
+                <div class="task" style="left: 330px; top: 470px; width: 80px; height: 40px;">Ліцензії</div>
+                <div class="task" style="left: 450px; top: 470px; width: 80px; height: 40px;">Інфраструктура</div>
+                <div class="task" style="left: 570px; top: 470px; width: 80px; height: 40px;">Підтримка</div>
+                <div class="task" style="left: 810px; top: 470px; width: 80px; height: 40px;">Сертифікація</div>
+                <div class="task" style="left: 1050px; top: 470px; width: 80px; height: 40px;">Оновлення</div>
+                
+                <!-- Support Lane -->
+                <div class="task" style="left: 1050px; top: 570px; width: 80px; height: 40px;">Підтримка</div>
+                <div class="task" style="left: 1170px; top: 570px; width: 80px; height: 40px;">Обслуговування</div>
+                <div class="task" style="left: 1290px; top: 570px; width: 80px; height: 40px;">Консультації</div>
+                
+                <!-- Gateways -->
+                <div class="gateway" style="left: 290px; top: 35px;">
+                    <div class="gateway-symbol">?</div>
+                </div>
+                <div class="element-label" style="left: 270px; top: 75px;">Договір?</div>
+                
+                <div class="gateway gateway-parallel" style="left: 650px; top: 35px;">
+                    <div class="gateway-symbol">+</div>
+                </div>
+                <div class="element-label" style="left: 630px; top: 75px;">Паралельно</div>
+                
+                <div class="gateway" style="left: 950px; top: 35px;">
+                    <div class="gateway-symbol">?</div>
+                </div>
+                <div class="element-label" style="left: 930px; top: 75px;">Готово?</div>
+                
+                <div class="gateway gateway-parallel" style="left: 1130px; top: 35px;">
+                    <div class="gateway-symbol">+</div>
+                </div>
+                <div class="element-label" style="left: 1110px; top: 75px;">Результати</div>
+                
+                <div class="gateway" style="left: 1250px; top: 35px;">
+                    <div class="gateway-symbol">?</div>
+                </div>
+                <div class="element-label" style="left: 1230px; top: 75px;">Підтримка?</div>
+                
+                <!-- Intermediate Events -->
+                <div class="intermediate-event" style="left: 650px; top: 260px;"></div>
+                <div class="element-label" style="left: 630px; top: 300px;">Готовність</div>
+                
+                <div class="intermediate-event" style="left: 890px; top: 260px;"></div>
+                <div class="element-label" style="left: 870px; top: 300px;">Тест завершено</div>
+                
+                <!-- End Event -->
+                <div class="end-event" style="left: 1310px; top: 36px;"></div>
+                <div class="element-label" style="left: 1290px; top: 70px;">Завершено</div>
+                
+                <!-- Sequence Flows - Client Lane -->
+                <div class="sequence-flow" style="left: 68px; top: 50px; width: 22px;"></div>
+                <div class="sequence-flow" style="left: 170px; top: 50px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 290px; top: 50px; width: 40px;"></div>
+                <div class="sequence-flow sequence-flow-yes" style="left: 325px; top: 50px; width: 25px;"></div>
+                <div class="flow-label yes" style="left: 330px; top: 35px;">Так</div>
+                <div class="sequence-flow" style="left: 410px; top: 50px; width: 100px;"></div>
+                <div class="sequence-flow" style="left: 590px; top: 50px; width: 60px;"></div>
+                <div class="sequence-flow" style="left: 770px; top: 50px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 890px; top: 50px; width: 60px;"></div>
+                <div class="sequence-flow sequence-flow-yes" style="left: 985px; top: 50px; width: 25px;"></div>
+                <div class="flow-label yes" style="left: 990px; top: 35px;">Так</div>
+                <div class="sequence-flow" style="left: 1070px; top: 50px; width: 60px;"></div>
+                <div class="sequence-flow" style="left: 1165px; top: 50px; width: 25px;"></div>
+                <div class="sequence-flow" style="left: 1250px; top: 50px; width: 60px;"></div>
+                <div class="sequence-flow sequence-flow-yes" style="left: 1285px; top: 50px; width: 25px;"></div>
+                <div class="flow-label yes" style="left: 1290px; top: 35px;">Так</div>
+                
+                <!-- No flows -->
+                <div class="sequence-flow-vertical sequence-flow-no" style="left: 305px; top: 70px; height: 70px;"></div>
+                <div class="sequence-flow sequence-flow-no" style="left: 270px; top: 140px; width: 35px;"></div>
+                <div class="flow-label no" style="left: 280px; top: 90px;">Ні</div>
+                
+                <div class="sequence-flow-vertical sequence-flow-no" style="left: 965px; top: 70px; height: 190px;"></div>
+                <div class="sequence-flow sequence-flow-no" style="left: 890px; top: 260px; width: 75px;"></div>
+                <div class="flow-label no" style="left: 920px; top: 130px;">Ні</div>
+                
+                <div class="sequence-flow-vertical sequence-flow-no" style="left: 1265px; top: 70px; height: 500px;"></div>
+                <div class="sequence-flow sequence-flow-no" style="left: 1130px; top: 570px; width: 135px;"></div>
+                <div class="flow-label no" style="left: 1270px; top: 300px;">Ні - завершення</div>
+                
+                <!-- Support flow -->
+                <div class="sequence-flow-vertical sequence-flow-yes" style="left: 1265px; top: 70px; height: 500px;"></div>
+                <div class="sequence-flow sequence-flow-yes" style="left: 1130px; top: 570px; width: 0px;"></div>
+                
+                <!-- Consultant Lane Flows -->
+                <div class="sequence-flow" style="left: 170px; top: 160px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 290px; top: 160px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 410px; top: 160px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 530px; top: 160px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 650px; top: 160px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 770px; top: 160px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 890px; top: 160px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 1010px; top: 160px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 1130px; top: 160px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 1250px; top: 160px; width: 40px;"></div>
+                
+                <!-- Developer Lane Flows -->
+                <div class="sequence-flow" style="left: 290px; top: 280px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 410px; top: 280px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 530px; top: 280px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 650px; top: 280px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 770px; top: 280px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 890px; top: 280px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 1010px; top: 280px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 1130px; top: 280px; width: 40px;"></div>
+                
+                <!-- Admin Lane Flows -->
+                <div class="sequence-flow" style="left: 170px; top: 390px; width: 160px;"></div>
+                <div class="sequence-flow" style="left: 410px; top: 390px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 530px; top: 390px; width: 160px;"></div>
+                <div class="sequence-flow" style="left: 770px; top: 390px; width: 160px;"></div>
+                <div class="sequence-flow" style="left: 1010px; top: 390px; width: 160px;"></div>
+                
+                <!-- Microsoft Lane Flows -->
+                <div class="sequence-flow" style="left: 410px; top: 490px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 530px; top: 490px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 650px; top: 490px; width: 160px;"></div>
+                <div class="sequence-flow" style="left: 890px; top: 490px; width: 160px;"></div>
+                
+                <!-- Support Lane Flows -->
+                <div class="sequence-flow" style="left: 1130px; top: 590px; width: 40px;"></div>
+                <div class="sequence-flow" style="left: 1250px; top: 590px; width: 40px;"></div>
+                
+                <!-- Cross-Lane Flows -->
+                <div class="sequence-flow-vertical" style="left: 130px; top: 70px; height: 70px;"></div>
+                <div class="sequence-flow" style="left: 130px; top: 140px; width: 40px;"></div>
+                
+                <div class="sequence-flow-vertical" style="left: 250px; top: 180px; height: 80px;"></div>
+                <div class="sequence-flow" style="left: 210px; top: 260px; width: 40px;"></div>
+                
+                <div class="sequence-flow-vertical" style="left: 670px; top: 280px; height: -120px;"></div>
+                <div class="sequence-flow" style="left: 670px; top: 160px; width: 40px;"></div>
+                
+                <div class="sequence-flow-vertical" style="left: 910px; top: 280px; height: -230px;"></div>
+                <div class="sequence-flow" style="left: 910px; top: 50px; width: 40px;"></div>
+                
+                <div class="sequence-flow-vertical" style="left: 490px; top: 410px; height: 60px;"></div>
+                <div class="sequence-flow" style="left: 450px; top: 470px; width: 40px;"></div>
+                
+                <div class="sequence-flow-vertical" style="left: 850px; top: 180px; height: -130px;"></div>
+                <div class="sequence-flow" style="left: 850px; top: 50px; width: 40px;"></div>
+                
+                <div class="sequence-flow-vertical" style="left: 1110px; top: 180px; height: 390px;"></div>
+                <div class="sequence-flow" style="left: 1110px; top: 570px; width: 40px;"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
