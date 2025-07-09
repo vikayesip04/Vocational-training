@@ -1,0 +1,245 @@
+erDiagram
+    COMPANY {
+        int company_id PK
+        string company_name
+        string legal_status
+        date creation_date
+        boolean diia_city_resident_status
+        int employee_count
+        decimal revenue
+        decimal profit
+        datetime created_at
+        datetime updated_at
+    }
+
+    DEPARTMENT {
+        int department_id PK
+        string department_name
+        string department_type
+        int employee_count
+        int company_id FK
+        int team_lead_id FK
+        datetime created_at
+        datetime updated_at
+    }
+
+    EMPLOYEE {
+        int employee_id PK
+        string first_name
+        string last_name
+        string position
+        int department_id FK
+        date hire_date
+        decimal salary
+        string contract_type
+        string english_level
+        int experience_years
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    CLIENT {
+        int client_id PK
+        string client_name
+        string industry
+        string country
+        string contact_person
+        string email
+        string phone
+        string company_size
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    PROJECT {
+        int project_id PK
+        string project_name
+        int client_id FK
+        date start_date
+        date end_date
+        string project_status
+        decimal budget
+        string project_type
+        string region
+        text description
+        datetime created_at
+        datetime updated_at
+    }
+
+    SERVICE {
+        int service_id PK
+        string service_name
+        string service_type
+        text description
+        decimal base_price
+        int estimated_duration_hours
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    CONTRACT {
+        int contract_id PK
+        string contract_number
+        int client_id FK
+        date start_date
+        date end_date
+        decimal contract_value
+        string contract_type
+        string status
+        string currency
+        datetime created_at
+        datetime updated_at
+    }
+
+    LICENSE {
+        int license_id PK
+        string license_type
+        string microsoft_portal_id
+        decimal cost
+        int validity_period
+        int project_id FK
+        date purchase_date
+        date expiry_date
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    APPLICATION {
+        int app_id PK
+        string app_name
+        string appsource_id
+        string version
+        date release_date
+        int downloads
+        decimal rating
+        text description
+        decimal price
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    TRAINING {
+        int training_id PK
+        string training_name
+        int duration_hours
+        int participants_count
+        int trainer_id FK
+        date training_date
+        int client_id FK
+        string training_type
+        decimal cost
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+
+    SERVER {
+        int server_id PK
+        string server_type
+        string cloud_provider
+        string configuration
+        decimal monthly_cost
+        int project_id FK
+        date setup_date
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    REPORT {
+        int report_id PK
+        string report_type
+        string report_title
+        date creation_date
+        int author_id FK
+        int project_id FK
+        text report_content
+        string file_path
+        boolean is_confidential
+        datetime created_at
+        datetime updated_at
+    }
+
+    PROJECT_EMPLOYEE {
+        int project_employee_id PK
+        int project_id FK
+        int employee_id FK
+        int hours_allocated
+        string role_in_project
+        date start_date
+        date end_date
+        decimal hourly_rate
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    PROJECT_SERVICE {
+        int project_service_id PK
+        int project_id FK
+        int service_id FK
+        int quantity
+        decimal unit_price
+        decimal total_price
+        date delivery_date
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+
+    CONTRACT_SERVICE {
+        int contract_service_id PK
+        int contract_id FK
+        int service_id FK
+        int quantity
+        decimal unit_price
+        decimal total_price
+        string delivery_terms
+        datetime created_at
+        datetime updated_at
+    }
+
+    PROJECT_APPLICATION {
+        int project_application_id PK
+        int project_id FK
+        int app_id FK
+        date implementation_date
+        string customization_level
+        boolean is_custom_developed
+        datetime created_at
+        datetime updated_at
+    }
+
+    %% Зв'язки між сутностями
+    COMPANY ||--o{ DEPARTMENT : "має"
+    DEPARTMENT ||--o{ EMPLOYEE : "включає"
+    EMPLOYEE ||--o| DEPARTMENT : "очолює як тім-лід"
+    
+    CLIENT ||--o{ PROJECT : "замовляє"
+    CLIENT ||--o{ CONTRACT : "укладає"
+    CLIENT ||--o{ TRAINING : "отримує"
+    
+    PROJECT ||--o{ LICENSE : "використовує"
+    PROJECT ||--o{ SERVER : "потребує"
+    PROJECT ||--o{ REPORT : "генерує"
+    
+    EMPLOYEE ||--o{ TRAINING : "проводить"
+    EMPLOYEE ||--o{ REPORT : "створює"
+    
+    %% Зв'язки багато-до-багатьох через проміжні таблиці
+    PROJECT ||--o{ PROJECT_EMPLOYEE : "залучає"
+    EMPLOYEE ||--o{ PROJECT_EMPLOYEE : "працює в"
+    
+    PROJECT ||--o{ PROJECT_SERVICE : "включає"
+    SERVICE ||--o{ PROJECT_SERVICE : "надається в"
+    
+    CONTRACT ||--o{ CONTRACT_SERVICE : "передбачає"
+    SERVICE ||--o{ CONTRACT_SERVICE : "входить до"
+    
+    PROJECT ||--o{ PROJECT_APPLICATION : "використовує"
+    APPLICATION ||--o{ PROJECT_APPLICATION : "впроваджується в"
