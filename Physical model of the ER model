@@ -1,0 +1,248 @@
+erDiagram
+    %% Фізична ER-модель з повною специфікацією типів даних та обмежень
+    
+    Company {
+        INT company_id PK "IDENTITY(1,1)"
+        NVARCHAR_255 company_name "NOT NULL"
+        NVARCHAR_100 legal_status "NOT NULL DEFAULT 'ТОВ'"
+        DATE creation_date "NOT NULL"
+        BIT diia_city_resident_status "NOT NULL DEFAULT 1"
+        INT employee_count "NOT NULL DEFAULT 0"
+        DECIMAL_15_2 revenue "DEFAULT 0"
+        DECIMAL_15_2 profit "DEFAULT 0"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Department {
+        INT department_id PK "IDENTITY(1,1)"
+        NVARCHAR_100 department_name "NOT NULL"
+        NVARCHAR_50 department_type "NOT NULL CHECK IN ('ERP-консультанти', 'ERP-розробники', 'Адміністративний персонал')"
+        INT employee_count "NOT NULL DEFAULT 0"
+        INT company_id FK "NOT NULL"
+        INT team_lead_id FK "NULL"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Employee {
+        INT employee_id PK "IDENTITY(1,1)"
+        NVARCHAR_100 first_name "NOT NULL"
+        NVARCHAR_100 last_name "NOT NULL"
+        NVARCHAR_100 position "NOT NULL"
+        INT department_id FK "NOT NULL"
+        DATE hire_date "NOT NULL"
+        DECIMAL_10_2 salary "NULL"
+        NVARCHAR_50 contract_type "NOT NULL DEFAULT 'Гіг-контракт'"
+        NVARCHAR_20 english_level "CHECK IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native')"
+        INT experience_years "DEFAULT 0"
+        BIT is_active "NOT NULL DEFAULT 1"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Client {
+        INT client_id PK "IDENTITY(1,1)"
+        NVARCHAR_255 client_name "NOT NULL"
+        NVARCHAR_100 industry "NULL"
+        NVARCHAR_100 country "NOT NULL"
+        NVARCHAR_255 contact_person "NULL"
+        NVARCHAR_255 email "NULL"
+        NVARCHAR_50 phone "NULL"
+        NVARCHAR_50 company_size "CHECK IN ('Малий', 'Середній', 'Великий', 'Корпоративний')"
+        BIT is_active "NOT NULL DEFAULT 1"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Project {
+        INT project_id PK "IDENTITY(1,1)"
+        NVARCHAR_255 project_name "NOT NULL"
+        INT client_id FK "NOT NULL"
+        DATE start_date "NOT NULL"
+        DATE end_date "NULL"
+        NVARCHAR_50 project_status "NOT NULL DEFAULT 'Активний' CHECK IN ('Активний', 'Завершений', 'Призупинений', 'Скасований')"
+        DECIMAL_15_2 budget "NULL"
+        NVARCHAR_100 project_type "NOT NULL CHECK IN ('Внутрішній', 'Міжнародний', 'Локальний')"
+        NVARCHAR_100 region "NULL"
+        NTEXT description "NULL"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Service {
+        INT service_id PK "IDENTITY(1,1)"
+        NVARCHAR_255 service_name "NOT NULL"
+        NVARCHAR_100 service_type "NOT NULL CHECK IN ('ERP-впровадження', 'Розробка', 'Консалтинг', 'Тренінг', 'Підтримка')"
+        NTEXT description "NULL"
+        DECIMAL_10_2 base_price "NULL"
+        INT estimated_duration_hours "NULL"
+        BIT is_active "NOT NULL DEFAULT 1"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Contract {
+        INT contract_id PK "IDENTITY(1,1)"
+        NVARCHAR_100 contract_number "NOT NULL UNIQUE"
+        INT client_id FK "NOT NULL"
+        DATE start_date "NOT NULL"
+        DATE end_date "NULL"
+        DECIMAL_15_2 contract_value "NOT NULL"
+        NVARCHAR_50 contract_type "NOT NULL CHECK IN ('Фіксована ціна', 'Погодинна оплата', 'Змішаний')"
+        NVARCHAR_50 status "NOT NULL DEFAULT 'Активний' CHECK IN ('Активний', 'Завершений', 'Призупинений', 'Розірваний')"
+        NVARCHAR_10 currency "NOT NULL DEFAULT 'USD'"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    License {
+        INT license_id PK "IDENTITY(1,1)"
+        NVARCHAR_100 license_type "NOT NULL"
+        NVARCHAR_255 microsoft_portal_id "NULL"
+        DECIMAL_10_2 cost "NOT NULL"
+        INT validity_period "NOT NULL"
+        INT project_id FK "NOT NULL"
+        DATE purchase_date "NOT NULL"
+        DATE expiry_date "NOT NULL"
+        BIT is_active "NOT NULL DEFAULT 1"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Application {
+        INT app_id PK "IDENTITY(1,1)"
+        NVARCHAR_255 app_name "NOT NULL"
+        NVARCHAR_255 appsource_id "NULL"
+        NVARCHAR_50 version "NOT NULL"
+        DATE release_date "NOT NULL"
+        INT downloads "DEFAULT 0"
+        DECIMAL_3_2 rating "NULL CHECK (rating >= 0 AND rating <= 5)"
+        NTEXT description "NULL"
+        DECIMAL_10_2 price "NULL"
+        BIT is_active "NOT NULL DEFAULT 1"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Training {
+        INT training_id PK "IDENTITY(1,1)"
+        NVARCHAR_255 training_name "NOT NULL"
+        INT duration_hours "NOT NULL"
+        INT participants_count "NOT NULL"
+        INT trainer_id FK "NOT NULL"
+        DATE training_date "NOT NULL"
+        INT client_id FK "NOT NULL"
+        NVARCHAR_100 training_type "CHECK IN ('Онлайн', 'Офлайн', 'Гібридний')"
+        DECIMAL_10_2 cost "NULL"
+        NVARCHAR_50 status "DEFAULT 'Заплановано' CHECK IN ('Заплановано', 'Проведено', 'Скасовано')"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Server {
+        INT server_id PK "IDENTITY(1,1)"
+        NVARCHAR_100 server_type "NOT NULL CHECK IN ('Продуктивний', 'Тестовий', 'Розробки')"
+        NVARCHAR_100 cloud_provider "NOT NULL CHECK IN ('Microsoft Azure', 'AWS', 'Google Cloud')"
+        NVARCHAR_500 configuration "NULL"
+        DECIMAL_10_2 monthly_cost "NOT NULL"
+        INT project_id FK "NOT NULL"
+        DATE setup_date "NOT NULL"
+        BIT is_active "NOT NULL DEFAULT 1"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Report {
+        INT report_id PK "IDENTITY(1,1)"
+        NVARCHAR_100 report_type "NOT NULL CHECK IN ('Статусний', 'Фінансовий', 'Технічний', 'Аналітичний')"
+        NVARCHAR_255 report_title "NOT NULL"
+        DATE creation_date "NOT NULL"
+        INT author_id FK "NOT NULL"
+        INT project_id FK "NULL"
+        NTEXT report_content "NULL"
+        NVARCHAR_500 file_path "NULL"
+        BIT is_confidential "NOT NULL DEFAULT 0"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    %% Таблиці зв'язку для відношень багато-до-багатьох
+    Project_Employee {
+        INT project_employee_id PK "IDENTITY(1,1)"
+        INT project_id FK "NOT NULL"
+        INT employee_id FK "NOT NULL"
+        INT hours_allocated "NOT NULL"
+        NVARCHAR_100 role_in_project "NOT NULL"
+        DATE start_date "NOT NULL"
+        DATE end_date "NULL"
+        DECIMAL_10_2 hourly_rate "NULL"
+        BIT is_active "NOT NULL DEFAULT 1"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Project_Service {
+        INT project_service_id PK "IDENTITY(1,1)"
+        INT project_id FK "NOT NULL"
+        INT service_id FK "NOT NULL"
+        INT quantity "NOT NULL DEFAULT 1"
+        DECIMAL_10_2 unit_price "NOT NULL"
+        DECIMAL_10_2 total_price "NOT NULL"
+        DATE delivery_date "NULL"
+        NVARCHAR_50 status "DEFAULT 'Заплановано' CHECK IN ('Заплановано', 'В роботі', 'Виконано', 'Скасовано')"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Contract_Service {
+        INT contract_service_id PK "IDENTITY(1,1)"
+        INT contract_id FK "NOT NULL"
+        INT service_id FK "NOT NULL"
+        INT quantity "NOT NULL DEFAULT 1"
+        DECIMAL_10_2 unit_price "NOT NULL"
+        DECIMAL_10_2 total_price "NOT NULL"
+        NVARCHAR_500 delivery_terms "NULL"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    Project_Application {
+        INT project_application_id PK "IDENTITY(1,1)"
+        INT project_id FK "NOT NULL"
+        INT app_id FK "NOT NULL"
+        DATE implementation_date "NOT NULL"
+        NVARCHAR_50 customization_level "CHECK IN ('Низький', 'Середній', 'Високий')"
+        BIT is_custom_developed "NOT NULL DEFAULT 0"
+        DATETIME2 created_at "DEFAULT GETDATE()"
+        DATETIME2 updated_at "DEFAULT GETDATE()"
+    }
+
+    %% Фізичні зв'язки з обмеженнями цілісності
+    Company ||--o{ Department : "company_id"
+    Department ||--o{ Employee : "department_id"
+    Employee ||--o| Department : "team_lead_id"
+    
+    Client ||--o{ Project : "client_id"
+    Client ||--o{ Contract : "client_id"
+    Client ||--o{ Training : "client_id"
+    
+    Project ||--o{ License : "project_id"
+    Project ||--o{ Server : "project_id"
+    Project ||--o{ Report : "project_id"
+    
+    Employee ||--o{ Training : "trainer_id"
+    Employee ||--o{ Report : "author_id"
+    
+    %% Зв'язки через проміжні таблиці
+    Project ||--o{ Project_Employee : "project_id"
+    Employee ||--o{ Project_Employee : "employee_id"
+    
+    Project ||--o{ Project_Service : "project_id"
+    Service ||--o{ Project_Service : "service_id"
+    
+    Contract ||--o{ Contract_Service : "contract_id"
+    Service ||--o{ Contract_Service : "service_id"
+    
+    Project ||--o{ Project_Application : "project_id"
+    Application ||--o{ Project_Application : "app_id"
