@@ -1,0 +1,424 @@
+-- ================================================
+-- CLARITY UKRAINE DATABASE - ПОВНИЙ СКРИПТ
+-- ================================================
+
+-- Створення бази даних
+CREATE DATABASE ClarityUkraineDB;
+GO
+
+USE ClarityUkraineDB;
+GO
+
+-- ================================================
+-- a) ПОБУДОВА СТРУКТУРИ БД
+-- ================================================
+
+-- 1. Таблиця: Компанія
+CREATE TABLE Company (
+    company_id INT PRIMARY KEY IDENTITY(1,1),
+    company_name NVARCHAR(255) NOT NULL,
+    legal_status NVARCHAR(100) NOT NULL DEFAULT 'ТОВ',
+    creation_date DATE NOT NULL,
+    diia_city_resident_status BIT NOT NULL DEFAULT 1,
+    employee_count INT NOT NULL DEFAULT 0,
+    revenue DECIMAL(15,2) DEFAULT 0,
+    profit DECIMAL(15,2) DEFAULT 0,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+
+-- 2. Таблиця: Департамент
+CREATE TABLE Department (
+    department_id INT PRIMARY KEY IDENTITY(1,1),
+    department_name NVARCHAR(100) NOT NULL,
+    department_type NVARCHAR(50) NOT NULL CHECK (department_type IN ('ERP-консультанти', 'ERP-розробники', 'Адміністративний персонал')),
+    employee_count INT NOT NULL DEFAULT 0,
+    company_id INT NOT NULL,
+    team_lead_id INT NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (company_id) REFERENCES Company(company_id)
+);
+
+-- 3. Таблиця: Співробітник
+CREATE TABLE Employee (
+    employee_id INT PRIMARY KEY IDENTITY(1,1),
+    first_name NVARCHAR(100) NOT NULL,
+    last_name NVARCHAR(100) NOT NULL,
+    position NVARCHAR(100) NOT NULL,
+    department_id INT NOT NULL,
+    hire_date DATE NOT NULL,
+    salary DECIMAL(10,2) NULL,
+    contract_type NVARCHAR(50) NOT NULL DEFAULT 'Гіг-контракт',
+    english_level NVARCHAR(20) CHECK (english_level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native')),
+    experience_years INT DEFAULT 0,
+    is_active BIT NOT NULL DEFAULT 1,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (department_id) REFERENCES Department(department_id)
+);
+
+-- Додавання зовнішнього ключа для team_lead_id
+ALTER TABLE Department 
+ADD FOREIGN KEY (team_lead_id) REFERENCES Employee(employee_id);
+
+-- 4. Таблиця: Клієнт (Контрагент)
+CREATE TABLE Client (
+    client_id INT PRIMARY KEY IDENTITY(1,1),
+    client_name NVARCHAR(255) NOT NULL,
+    industry NVARCHAR(100) NULL,
+    country NVARCHAR(100) NOT NULL,
+    contact_person NVARCHAR(255) NULL,
+    email NVARCHAR(255) NULL,
+    phone NVARCHAR(50) NULL,
+    company_size NVARCHAR(50) CHECK (company_size IN ('Малий', 'Середній', 'Великий', 'Корпоративний')),
+    is_active BIT NOT NULL DEFAULT 1,
+    registration_date DATE DEFAULT GETDATE(),
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+
+-- 5. Таблиця: Послуга
+CREATE TABLE Service (
+    service_id INT PRIMARY KEY IDENTITY(1,1),
+    service_name NVARCHAR(255) NOT NULL,
+    service_type NVARCHAR(100) NOT NULL CHECK (service_type IN ('ERP-впровадження', 'Розробка', 'Консалтинг', 'Тренінг', 'Підтримка')),
+    description NTEXT NULL,
+    base_price DECIMAL(10,2) NULL,
+    estimated_duration_hours INT NULL,
+    is_active BIT NOT NULL DEFAULT 1,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE()
+);
+
+-- 6. Таблиця: Проєкт
+CREATE TABLE Project (
+    project_id INT PRIMARY KEY IDENTITY(1,1),
+    project_name NVARCHAR(255) NOT NULL,
+    client_id INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    project_status NVARCHAR(50) NOT NULL DEFAULT 'Активний' CHECK (project_status IN ('Активний', 'Завершений', 'Призупинений', 'Скасований')),
+    budget DECIMAL(15,2) NULL,
+    project_type NVARCHAR(100) NOT NULL CHECK (project_type IN ('Внутрішній', 'Міжнародний', 'Локальний')),
+    region NVARCHAR(100) NULL,
+    description NTEXT NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (client_id) REFERENCES Client(client_id)
+);
+
+-- 7. Таблиця: Контракт
+CREATE TABLE Contract (
+    contract_id INT PRIMARY KEY IDENTITY(1,1),
+    contract_number NVARCHAR(100) NOT NULL UNIQUE,
+    client_id INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    contract_value DECIMAL(15,2) NOT NULL,
+    contract_type NVARCHAR(50) NOT NULL CHECK (contract_type IN ('Фіксована ціна', 'Погодинна оплата', 'Змішаний')),
+    status NVARCHAR(50) NOT NULL DEFAULT 'Активний' CHECK (status IN ('Активний', 'Завершений', 'Призупинений', 'Розірваний')),
+    currency NVARCHAR(10) NOT NULL DEFAULT 'USD',
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (client_id) REFERENCES Client(client_id)
+);
+
+-- 8. Таблиця зв'язку: Проєкт-Співробітник (M:M)
+CREATE TABLE Project_Employee (
+    project_employee_id INT PRIMARY KEY IDENTITY(1,1),
+    project_id INT NOT NULL,
+    employee_id INT NOT NULL,
+    hours_allocated INT NOT NULL,
+    role_in_project NVARCHAR(100) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    hourly_rate DECIMAL(10,2) NULL,
+    is_active BIT NOT NULL DEFAULT 1,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (project_id) REFERENCES Project(project_id),
+    FOREIGN KEY (employee_id) REFERENCES Employee(employee_id),
+    UNIQUE (project_id, employee_id, start_date)
+);
+
+-- 9. Таблиця зв'язку: Проєкт-Послуга (M:M)
+CREATE TABLE Project_Service (
+    project_service_id INT PRIMARY KEY IDENTITY(1,1),
+    project_id INT NOT NULL,
+    service_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    unit_price DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    delivery_date DATE NULL,
+    status NVARCHAR(50) DEFAULT 'Заплановано' CHECK (status IN ('Заплановано', 'В роботі', 'Виконано', 'Скасовано')),
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (project_id) REFERENCES Project(project_id),
+    FOREIGN KEY (service_id) REFERENCES Service(service_id)
+);
+
+-- Створення індексів
+CREATE INDEX IX_Employee_Department ON Employee(department_id);
+CREATE INDEX IX_Project_Client ON Project(client_id);
+CREATE INDEX IX_Project_Status ON Project(project_status);
+CREATE INDEX IX_Contract_Client ON Contract(client_id);
+CREATE INDEX IX_Client_Country ON Client(country);
+CREATE INDEX IX_Client_Active ON Client(is_active);
+
+-- ================================================
+-- ПЕРЕВІРКА КЛЮЧІВ ТА 3НФ
+-- ================================================
+
+-- Перевірка первинних ключів
+SELECT 
+    t.name AS TableName,
+    c.name AS ColumnName,
+    'PRIMARY KEY' AS KeyType
+FROM sys.tables t
+JOIN sys.key_constraints k ON t.object_id = k.parent_object_id
+JOIN sys.index_columns ic ON k.parent_object_id = ic.object_id AND k.unique_index_id = ic.index_id
+JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+WHERE k.type = 'PK'
+ORDER BY t.name;
+
+-- Перевірка зовнішніх ключів
+SELECT 
+    fk.name AS ForeignKeyName,
+    tp.name AS ParentTable,
+    cp.name AS ParentColumn,
+    tr.name AS ReferencedTable,
+    cr.name AS ReferencedColumn
+FROM sys.foreign_keys fk
+JOIN sys.foreign_key_columns fkc ON fk.object_id = fkc.constraint_object_id
+JOIN sys.tables tp ON fkc.parent_object_id = tp.object_id
+JOIN sys.columns cp ON fkc.parent_object_id = cp.object_id AND fkc.parent_column_id = cp.column_id
+JOIN sys.tables tr ON fkc.referenced_object_id = tr.object_id
+JOIN sys.columns cr ON fkc.referenced_object_id = cr.object_id AND fkc.referenced_column_id = cr.column_id
+ORDER BY tp.name, fk.name;
+
+-- ================================================
+-- c) ЗАПОВНЕННЯ ТАБЛИЦЬ БД
+-- ================================================
+
+-- Заповнення таблиці Company
+INSERT INTO Company (company_name, legal_status, creation_date, diia_city_resident_status, employee_count, revenue, profit)
+VALUES ('Clarity Ukraine', 'ТОВ', '2022-03-01', 1, 34, 2500000.00, 450000.00);
+
+-- Заповнення таблиці Department
+INSERT INTO Department (department_name, department_type, employee_count, company_id) VALUES
+('ERP Консалтинг', 'ERP-консультанти', 15, 1),
+('ERP Розробка', 'ERP-розробники', 12, 1),
+('Адміністрація', 'Адміністративний персонал', 7, 1);
+
+-- Заповнення таблиці Employee
+INSERT INTO Employee (first_name, last_name, position, department_id, hire_date, salary, contract_type, english_level, experience_years) VALUES
+('Олексій', 'Петренко', 'Старший ERP-консультант', 1, '2022-03-15', 85000.00, 'Гіг-контракт', 'C1', 8),
+('Марія', 'Іванова', 'ERP-розробник', 2, '2022-04-01', 75000.00, 'Гіг-контракт', 'B2', 5),
+('Дмитро', 'Коваленко', 'CEO', 3, '2022-03-01', 120000.00, 'Гіг-контракт', 'C2', 15),
+('Анна', 'Сидорова', 'Тім-лід консалтингу', 1, '2022-03-20', 95000.00, 'Гіг-контракт', 'C1', 10),
+('Сергій', 'Мельник', 'Тім-лід розробки', 2, '2022-04-15', 90000.00, 'Гіг-контракт', 'B2', 7),
+('Оксана', 'Волкова', 'HR-менеджер', 3, '2022-05-01', 60000.00, 'Гіг-контракт', 'B2', 6),
+('Віктор', 'Бондаренко', 'ERP-консультант', 1, '2022-06-01', 70000.00, 'Гіг-контракт', 'B2', 4),
+('Тетяна', 'Гришко', 'Аккаунт-менеджер', 3, '2022-07-01', 65000.00, 'Гіг-контракт', 'C1', 5);
+
+-- Оновлення team_lead_id в Department
+UPDATE Department SET team_lead_id = 4 WHERE department_id = 1;
+UPDATE Department SET team_lead_id = 5 WHERE department_id = 2;
+UPDATE Department SET team_lead_id = 3 WHERE department_id = 3;
+
+-- Заповнення таблиці Client (Контрагенти)
+INSERT INTO Client (client_name, industry, country, contact_person, email, phone, company_size, registration_date) VALUES
+('Kernel', 'Агробізнес', 'Україна', 'Іван Петров', 'i.petrov@kernel.com', '+380671234567', 'Корпоративний', '2022-04-15'),
+('Glovo', 'Доставка їжі', 'Іспанія', 'Maria Garcia', 'm.garcia@glovo.com', '+34612345678', 'Великий', '2022-05-20'),
+('Лабораторії Діла', 'Медицина', 'Україна', 'Олена Коваль', 'o.koval@dila.com.ua', '+380675555555', 'Великий', '2022-06-10'),
+('N-iX', 'ІТ-послуги', 'Україна', 'Андрій Шевченко', 'a.shevchenko@n-ix.com', '+380671111111', 'Корпоративний', '2022-07-01'),
+('Star-Bud', 'Будівництво', 'Україна', 'Володимир Сидоренко', 'v.sidorenko@star-bud.ua', '+380672222222', 'Великий', '2022-08-15'),
+('E&Y Lithuania', 'Консалтинг', 'Литва', 'Vytautas Kavaliauskas', 'v.kavaliauskas@ey.com', '+37060123456', 'Корпоративний', '2022-09-01'),
+('Koru Pharmaceuticals', 'Фармацевтика', 'Південна Корея', 'Kim Min-jun', 'k.minjun@koru.kr', '+821012345678', 'Середній', '2022-10-10'),
+('FCA Investments', 'Фінанси', 'Фінляндія', 'Jukka Virtanen', 'j.virtanen@fca.fi', '+358401234567', 'Середній', '2022-11-05'),
+('Baumueller', 'Промислове обладнання', 'Німеччина', 'Hans Mueller', 'h.mueller@baumueller.com', '+491711234567', 'Великий', '2023-01-15'),
+('Aurora', 'Роздрібна торгівля', 'Україна', 'Світлана Кравченко', 's.kravchenko@aurora.ua', '+380673333333', 'Середній', '2023-02-20');
+
+-- Заповнення таблиці Service
+INSERT INTO Service (service_name, service_type, description, base_price, estimated_duration_hours) VALUES
+('Впровадження Business Central', 'ERP-впровадження', 'Повне впровадження Microsoft Dynamics 365 Business Central', 25000.00, 300),
+('Розробка додатків', 'Розробка', 'Створення кастомних додатків для Business Central', 15000.00, 200),
+('Консалтинг з ERP', 'Консалтинг', 'Консультаційні послуги з оптимізації бізнес-процесів', 150.00, 1),
+('Тренінг користувачів', 'Тренінг', 'Навчання користувачів роботі з системою', 2000.00, 16),
+('Технічна підтримка', 'Підтримка', 'Постійна технічна підтримка системи', 5000.00, 40);
+
+-- Заповнення таблиці Project
+INSERT INTO Project (project_name, client_id, start_date, end_date, project_status, budget, project_type, region) VALUES
+('Kernel ERP Migration', 1, '2022-05-01', '2022-12-31', 'Завершений', 180000.00, 'Локальний', 'Україна'),
+('Glovo International Setup', 2, '2022-06-15', '2023-03-15', 'Завершений', 120000.00, 'Міжнародний', 'Європа'),
+('Діла Lab Management', 3, '2022-07-01', '2023-01-31', 'Завершений', 95000.00, 'Локальний', 'Україна'),
+('N-iX Process Optimization', 4, '2022-08-01', NULL, 'Активний', 220000.00, 'Локальний', 'Україна'),
+('Star-Bud Construction ERP', 5, '2022-09-15', '2023-06-30', 'Завершений', 85000.00, 'Локальний', 'Україна'),
+('E&Y Lithuania Integration', 6, '2022-10-01', NULL, 'Активний', 140000.00, 'Міжнародний', 'Балтія'),
+('Koru Pharma System', 7, '2022-11-01', '2023-08-31', 'Завершений', 75000.00, 'Міжнародний', 'Азія'),
+('FCA Financial Module', 8, '2023-01-15', NULL, 'Активний', 110000.00, 'Міжнародний', 'Скандинавія'),
+('Baumueller Manufacturing', 9, '2023-02-01', NULL, 'Активний', 160000.00, 'Міжнародний', 'Німеччина'),
+('Aurora Retail Solution', 10, '2023-03-01', '2023-12-31', 'Активний', 65000.00, 'Локальний', 'Україна');
+
+-- Заповнення таблиці Contract
+INSERT INTO Contract (contract_number, client_id, start_date, end_date, contract_value, contract_type, status, currency) VALUES
+('CU-2022-001', 1, '2022-05-01', '2022-12-31', 180000.00, 'Фіксована ціна', 'Завершений', 'USD'),
+('CU-2022-002', 2, '2022-06-15', '2023-03-15', 120000.00, 'Фіксована ціна', 'Завершений', 'EUR'),
+('CU-2022-003', 3, '2022-07-01', '2023-01-31', 95000.00, 'Погодинна оплата', 'Завершений', 'USD'),
+('CU-2022-004', 4, '2022-08-01', '2024-08-01', 220000.00, 'Змішаний', 'Активний', 'USD'),
+('CU-2022-005', 5, '2022-09-15', '2023-06-30', 85000.00, 'Фіксована ціна', 'Завершений', 'USD'),
+('CU-2022-006', 6, '2022-10-01', '2024-10-01', 140000.00, 'Погодинна оплата', 'Активний', 'EUR'),
+('CU-2022-007', 7, '2022-11-01', '2023-08-31', 75000.00, 'Фіксована ціна', 'Завершений', 'USD'),
+('CU-2023-001', 8, '2023-01-15', '2024-01-15', 110000.00, 'Змішаний', 'Активний', 'EUR'),
+('CU-2023-002', 9, '2023-02-01', '2024-02-01', 160000.00, 'Фіксована ціна', 'Активний', 'EUR'),
+('CU-2023-003', 10, '2023-03-01', '2023-12-31', 65000.00, 'Погодинна оплата', 'Активний', 'USD');
+
+-- Заповнення таблиці Project_Employee
+INSERT INTO Project_Employee (project_id, employee_id, hours_allocated, role_in_project, start_date, hourly_rate) VALUES
+(1, 1, 200, 'Лідер проєкту', '2022-05-01', 120.00),
+(1, 2, 150, 'Розробник', '2022-05-15', 85.00),
+(2, 4, 180, 'Лідер проєкту', '2022-06-15', 130.00),
+(2, 7, 120, 'Консультант', '2022-06-20', 95.00),
+(3, 1, 160, 'Старший консультант', '2022-07-01', 120.00),
+(4, 4, 240, 'Лідер проєкту', '2022-08-01', 130.00),
+(4, 5, 200, 'Технічний лідер', '2022-08-15', 110.00),
+(5, 7, 140, 'Консультант', '2022-09-15', 95.00),
+(6, 1, 180, 'Лідер проєкту', '2022-10-01', 120.00),
+(7, 4, 160, 'Старший консультант', '2022-11-01', 130.00);
+
+-- Заповнення таблиці Project_Service
+INSERT INTO Project_Service (project_id, service_id, quantity, unit_price, total_price, status) VALUES
+(1, 1, 1, 25000.00, 25000.00, 'Виконано'),
+(1, 4, 2, 2000.00, 4000.00, 'Виконано'),
+(2, 1, 1, 20000.00, 20000.00, 'Виконано'),
+(2, 2, 1, 15000.00, 15000.00, 'Виконано'),
+(3, 1, 1, 22000.00, 22000.00, 'Виконано'),
+(4, 1, 1, 28000.00, 28000.00, 'В роботі'),
+(4, 3, 50, 150.00, 7500.00, 'В роботі'),
+(5, 1, 1, 23000.00, 23000.00, 'Виконано'),
+(6, 1, 1, 26000.00, 26000.00, 'В роботі'),
+(7, 1, 1, 21000.00, 21000.00, 'Виконано');
+
+-- ================================================
+-- d) СКРИПТИ ЗАПИТІВ БД ЩОДО КОНТРАГЕНТІВ
+-- ================================================
+
+-- ЗАПИТ 1: Наявність контрагентів за країнами
+SELECT 
+    country AS 'Країна',
+    COUNT(*) AS 'Кількість контрагентів',
+    COUNT(CASE WHEN is_active = 1 THEN 1 END) AS 'Активних',
+    COUNT(CASE WHEN is_active = 0 THEN 1 END) AS 'Неактивних'
+FROM Client
+GROUP BY country
+ORDER BY COUNT(*) DESC;
+
+-- ЗАПИТ 2: Кількість проєктів та загальний бюджет по контрагентах
+SELECT 
+    c.client_name AS 'Назва контрагента',
+    c.country AS 'Країна',
+    c.industry AS 'Галузь',
+    COUNT(p.project_id) AS 'Кількість проєктів',
+    ISNULL(SUM(p.budget), 0) AS 'Загальний бюджет',
+    AVG(p.budget) AS 'Середній бюджет проєкту'
+FROM Client c
+LEFT JOIN Project p ON c.client_id = p.client_id
+GROUP BY c.client_id, c.client_name, c.country, c.industry
+ORDER BY COUNT(p.project_id) DESC, SUM(p.budget) DESC;
+
+-- ЗАПИТ 3: Особливості роботи з контрагентами по типу контракту
+SELECT 
+    c.client_name AS 'Контрагент',
+    c.country AS 'Країна',
+    ct.contract_type AS 'Тип контракту',
+    ct.currency AS 'Валюта',
+    ct.contract_value AS 'Вартість контракту',
+    ct.status AS 'Статус контракту',
+    DATEDIFF(DAY, ct.start_date, ISNULL(ct.end_date, GETDATE())) AS 'Тривалість (днів)'
+FROM Client c
+JOIN Contract ct ON c.client_id = ct.client_id
+ORDER BY ct.contract_value DESC;
+
+-- ЗАПИТ 4: Аналіз ефективності роботи з контрагентами
+WITH ClientStats AS (
+    SELECT 
+        c.client_id,
+        c.client_name,
+        c.country,
+        c.company_size,
+        COUNT(p.project_id) AS project_count,
+        SUM(p.budget) AS total_budget,
+        COUNT(CASE WHEN p.project_status = 'Завершений' THEN 1 END) AS completed_projects,
+        COUNT(CASE WHEN p.project_status = 'Активний' THEN 1 END) AS active_projects,
+        MAX(p.start_date) AS last_project_date,
+        DATEDIFF(DAY, c.registration_date, GETDATE()) AS days_since_registration
+    FROM Client c
+    LEFT JOIN Project p ON c.client_id = p.client_id
+    GROUP BY c.client_id, c.client_name, c.country, c.company_size, c.registration_date
+)
+SELECT 
+    client_name AS 'Контрагент',
+    country AS 'Країна',
+    company_size AS 'Розмір компанії',
+    project_count AS 'Всього проєктів',
+    completed_projects AS 'Завершених проєктів',
+    active_projects AS 'Активних проєктів',
+    total_budget AS 'Загальний бюджет',
+    CASE 
+        WHEN project_count > 0 THEN CAST(completed_projects * 100.0 / project_count AS DECIMAL(5,2))
+        ELSE 0
+    END AS 'Відсоток завершених (%)',
+    days_since_registration AS 'Днів з реєстрації',
+    CASE 
+        WHEN days_since_registration > 0 AND project_count > 0 
+        THEN CAST(project_count * 365.0 / days_since_registration AS DECIMAL(5,2))
+        ELSE 0
+    END AS 'Проєктів на рік'
+FROM ClientStats
+ORDER BY total_budget DESC;
+
+-- ================================================
+-- ДОДАТКОВІ ПРЕДСТАВЛЕННЯ ДЛЯ АНАЛІЗУ
+-- ================================================
+
+-- Представлення: Активні контрагенти з проєктами
+CREATE VIEW v_ActiveClientsWithProjects AS
+SELECT 
+    c.client_id,
+    c.client_name,
+    c.country,
+    c.industry,
+    COUNT(p.project_id) as active_projects,
+    SUM(p.budget) as total_active_budget
+FROM Client c
+JOIN Project p ON c.client_id = p.client_id
+WHERE c.is_active = 1 AND p.project_status = 'Активний'
+GROUP BY c.client_id, c.client_name, c.country, c.industry;
+
+-- Представлення: Топ контрагенти за прибутковістю
+CREATE VIEW v_TopClientsByRevenue AS
+SELECT 
+    c.client_name,
+    c.country,
+    SUM(ct.contract_value) as total_contract_value,
+    COUNT(p.project_id) as total_projects,
+    AVG(p.budget) as avg_project_budget
+FROM Client c
+LEFT JOIN Contract ct ON c.client_id = ct.client_id
+LEFT JOIN Project p ON c.client_id = p.client_id
+GROUP BY c.client_id, c.client_name, c.country
+HAVING SUM(ct.contract_value) > 0;
+
+-- ================================================
+-- СТАТИСТИКА БАЗИ ДАНИХ
+-- ================================================
+
+-- Кількість записів у кожній таблиці
+SELECT 
+    t.name AS 'Таблиця',
+    p.rows AS 'Кількість записів'
+FROM sys.tables t
+JOIN sys.dm_db_partition_stats p ON t.object_id = p.object_id
+WHERE p.index_id IN (0, 1)
+ORDER BY p.rows DESC;
