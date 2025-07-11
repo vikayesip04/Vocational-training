@@ -11,147 +11,147 @@ USE ClarityUkraineDB;
 -- a) ПОБУДОВА СТРУКТУРИ БД
 -- ================================================
 
--- 1. Таблиця: Компанія
+-- Таблиця: Company
 CREATE TABLE Company (
-    company_id INT PRIMARY KEY IDENTITY(1,1),
-    company_name NVARCHAR(255) NOT NULL,
-    legal_status NVARCHAR(100) NOT NULL DEFAULT 'ТОВ',
+    company_id INT PRIMARY KEY AUTO_INCREMENT,
+    company_name VARCHAR(255) NOT NULL,
+    legal_status VARCHAR(100) NOT NULL DEFAULT 'ТОВ',
     creation_date DATE NOT NULL,
-    diia_city_resident_status BIT NOT NULL DEFAULT 1,
+    diia_city_resident_status BOOLEAN NOT NULL DEFAULT TRUE,
     employee_count INT NOT NULL DEFAULT 0,
     revenue DECIMAL(15,2) DEFAULT 0,
     profit DECIMAL(15,2) DEFAULT 0,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE()
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 2. Таблиця: Департамент
+-- Таблиця: Department (без зовнішнього ключа на team_lead_id)
 CREATE TABLE Department (
-    department_id INT PRIMARY KEY IDENTITY(1,1),
-    department_name NVARCHAR(100) NOT NULL,
-    department_type NVARCHAR(50) NOT NULL CHECK (department_type IN ('ERP-консультанти', 'ERP-розробники', 'Адміністративний персонал')),
+    department_id INT PRIMARY KEY AUTO_INCREMENT,
+    department_name VARCHAR(100) NOT NULL,
+    department_type VARCHAR(50) NOT NULL,
     employee_count INT NOT NULL DEFAULT 0,
     company_id INT NOT NULL,
-    team_lead_id INT NULL,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE(),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (company_id) REFERENCES Company(company_id)
 );
 
--- 3. Таблиця: Співробітник
+-- Таблиця: Employee
 CREATE TABLE Employee (
-    employee_id INT PRIMARY KEY IDENTITY(1,1),
-    first_name NVARCHAR(100) NOT NULL,
-    last_name NVARCHAR(100) NOT NULL,
-    position NVARCHAR(100) NOT NULL,
+    employee_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    position VARCHAR(100) NOT NULL,
     department_id INT NOT NULL,
     hire_date DATE NOT NULL,
-    salary DECIMAL(10,2) NULL,
-    contract_type NVARCHAR(50) NOT NULL DEFAULT 'Гіг-контракт',
-    english_level NVARCHAR(20) CHECK (english_level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native')),
+    salary DECIMAL(10,2),
+    contract_type VARCHAR(50) NOT NULL DEFAULT 'Гіг-контракт',
+    english_level VARCHAR(20),
     experience_years INT DEFAULT 0,
-    is_active BIT NOT NULL DEFAULT 1,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE(),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (department_id) REFERENCES Department(department_id)
 );
 
--- Додавання зовнішнього ключа для team_lead_id
-ALTER TABLE Department 
+-- Додавання зовнішнього ключа на team_lead_id (тепер, коли Employee вже створено)
+ALTER TABLE Department
+ADD COLUMN team_lead_id INT,
 ADD FOREIGN KEY (team_lead_id) REFERENCES Employee(employee_id);
 
--- 4. Таблиця: Клієнт (Контрагент)
+-- Таблиця: Client
 CREATE TABLE Client (
-    client_id INT PRIMARY KEY IDENTITY(1,1),
-    client_name NVARCHAR(255) NOT NULL,
-    industry NVARCHAR(100) NULL,
-    country NVARCHAR(100) NOT NULL,
-    contact_person NVARCHAR(255) NULL,
-    email NVARCHAR(255) NULL,
-    phone NVARCHAR(50) NULL,
-    company_size NVARCHAR(50) CHECK (company_size IN ('Малий', 'Середній', 'Великий', 'Корпоративний')),
-    is_active BIT NOT NULL DEFAULT 1,
-    registration_date DATE DEFAULT GETDATE(),
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE()
+    client_id INT PRIMARY KEY AUTO_INCREMENT,
+    client_name VARCHAR(255) NOT NULL,
+    industry VARCHAR(100),
+    country VARCHAR(100) NOT NULL,
+    contact_person VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    company_size VARCHAR(50),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    registration_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 5. Таблиця: Послуга
+-- Таблиця: Service
 CREATE TABLE Service (
-    service_id INT PRIMARY KEY IDENTITY(1,1),
-    service_name NVARCHAR(255) NOT NULL,
-    service_type NVARCHAR(100) NOT NULL CHECK (service_type IN ('ERP-впровадження', 'Розробка', 'Консалтинг', 'Тренінг', 'Підтримка')),
-    description NTEXT NULL,
-    base_price DECIMAL(10,2) NULL,
-    estimated_duration_hours INT NULL,
-    is_active BIT NOT NULL DEFAULT 1,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE()
+    service_id INT PRIMARY KEY AUTO_INCREMENT,
+    service_name VARCHAR(255) NOT NULL,
+    service_type VARCHAR(100) NOT NULL,
+    description TEXT,
+    base_price DECIMAL(10,2),
+    estimated_duration_hours INT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 6. Таблиця: Проєкт
+-- Таблиця: Project
 CREATE TABLE Project (
-    project_id INT PRIMARY KEY IDENTITY(1,1),
-    project_name NVARCHAR(255) NOT NULL,
+    project_id INT PRIMARY KEY AUTO_INCREMENT,
+    project_name VARCHAR(255) NOT NULL,
     client_id INT NOT NULL,
     start_date DATE NOT NULL,
-    end_date DATE NULL,
-    project_status NVARCHAR(50) NOT NULL DEFAULT 'Активний' CHECK (project_status IN ('Активний', 'Завершений', 'Призупинений', 'Скасований')),
-    budget DECIMAL(15,2) NULL,
-    project_type NVARCHAR(100) NOT NULL CHECK (project_type IN ('Внутрішній', 'Міжнародний', 'Локальний')),
-    region NVARCHAR(100) NULL,
-    description NTEXT NULL,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE(),
+    end_date DATE,
+    project_status VARCHAR(50) NOT NULL DEFAULT 'Активний',
+    budget DECIMAL(15,2),
+    project_type VARCHAR(100) NOT NULL,
+    region VARCHAR(100),
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES Client(client_id)
 );
 
--- 7. Таблиця: Контракт
+-- Таблиця: Contract
 CREATE TABLE Contract (
-    contract_id INT PRIMARY KEY IDENTITY(1,1),
-    contract_number NVARCHAR(100) NOT NULL UNIQUE,
+    contract_id INT PRIMARY KEY AUTO_INCREMENT,
+    contract_number VARCHAR(100) NOT NULL UNIQUE,
     client_id INT NOT NULL,
     start_date DATE NOT NULL,
-    end_date DATE NULL,
+    end_date DATE,
     contract_value DECIMAL(15,2) NOT NULL,
-    contract_type NVARCHAR(50) NOT NULL CHECK (contract_type IN ('Фіксована ціна', 'Погодинна оплата', 'Змішаний')),
-    status NVARCHAR(50) NOT NULL DEFAULT 'Активний' CHECK (status IN ('Активний', 'Завершений', 'Призупинений', 'Розірваний')),
-    currency NVARCHAR(10) NOT NULL DEFAULT 'USD',
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE(),
+    contract_type VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Активний',
+    currency VARCHAR(10) NOT NULL DEFAULT 'USD',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES Client(client_id)
 );
 
--- 8. Таблиця зв'язку: Проєкт-Співробітник (M:M)
+-- Таблиця: Project_Employee
 CREATE TABLE Project_Employee (
-    project_employee_id INT PRIMARY KEY IDENTITY(1,1),
+    project_employee_id INT PRIMARY KEY AUTO_INCREMENT,
     project_id INT NOT NULL,
     employee_id INT NOT NULL,
     hours_allocated INT NOT NULL,
-    role_in_project NVARCHAR(100) NOT NULL,
+    role_in_project VARCHAR(100) NOT NULL,
     start_date DATE NOT NULL,
-    end_date DATE NULL,
-    hourly_rate DECIMAL(10,2) NULL,
-    is_active BIT NOT NULL DEFAULT 1,
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE(),
+    end_date DATE,
+    hourly_rate DECIMAL(10,2),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (project_id) REFERENCES Project(project_id),
     FOREIGN KEY (employee_id) REFERENCES Employee(employee_id),
     UNIQUE (project_id, employee_id, start_date)
 );
 
--- 9. Таблиця зв'язку: Проєкт-Послуга (M:M)
+-- Таблиця: Project_Service
 CREATE TABLE Project_Service (
-    project_service_id INT PRIMARY KEY IDENTITY(1,1),
+    project_service_id INT PRIMARY KEY AUTO_INCREMENT,
     project_id INT NOT NULL,
     service_id INT NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
     unit_price DECIMAL(10,2) NOT NULL,
     total_price DECIMAL(10,2) NOT NULL,
-    delivery_date DATE NULL,
-    status NVARCHAR(50) DEFAULT 'Заплановано' CHECK (status IN ('Заплановано', 'В роботі', 'Виконано', 'Скасовано')),
-    created_at DATETIME2 DEFAULT GETDATE(),
-    updated_at DATETIME2 DEFAULT GETDATE(),
+    delivery_date DATE,
+    status VARCHAR(50) DEFAULT 'Заплановано',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (project_id) REFERENCES Project(project_id),
     FOREIGN KEY (service_id) REFERENCES Service(service_id)
 );
