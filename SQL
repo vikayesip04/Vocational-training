@@ -409,9 +409,9 @@ HAVING SUM(ct.contract_value) > 0;
 
 -- Кількість записів у кожній таблиці
 SELECT 
-    t.name AS 'Таблиця',
-    p.rows AS 'Кількість записів'
-FROM sys.tables t
-JOIN sys.dm_db_partition_stats p ON t.object_id = p.object_id
-WHERE p.index_id IN (0, 1)
-ORDER BY p.rows DESC;
+    table_name AS 'Таблиця',
+    table_rows AS 'Кількість записів'
+FROM information_schema.tables
+WHERE table_schema = DATABASE()
+    AND table_type = 'BASE TABLE'
+ORDER BY table_rows DESC;
