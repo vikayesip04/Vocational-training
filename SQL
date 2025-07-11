@@ -313,8 +313,8 @@ SELECT
     c.country AS 'Країна',
     c.industry AS 'Галузь',
     COUNT(p.project_id) AS 'Кількість проєктів',
-    ISNULL(SUM(p.budget), 0) AS 'Загальний бюджет',
-    AVG(p.budget) AS 'Середній бюджет проєкту'
+    IFNULL(SUM(p.budget), 0) AS 'Загальний бюджет',
+    ROUND(AVG(p.budget), 2) AS 'Середній бюджет проєкту'
 FROM Client c
 LEFT JOIN Project p ON c.client_id = p.client_id
 GROUP BY c.client_id, c.client_name, c.country, c.industry
@@ -328,7 +328,7 @@ SELECT
     ct.currency AS 'Валюта',
     ct.contract_value AS 'Вартість контракту',
     ct.status AS 'Статус контракту',
-    DATEDIFF(DAY, ct.start_date, ISNULL(ct.end_date, GETDATE())) AS 'Тривалість (днів)'
+    DATEDIFF(IFNULL(ct.end_date, CURRENT_DATE), ct.start_date) AS 'Тривалість (днів)'
 FROM Client c
 JOIN Contract ct ON c.client_id = ct.client_id
 ORDER BY ct.contract_value DESC;
@@ -345,7 +345,7 @@ WITH ClientStats AS (
         COUNT(CASE WHEN p.project_status = 'Завершений' THEN 1 END) AS completed_projects,
         COUNT(CASE WHEN p.project_status = 'Активний' THEN 1 END) AS active_projects,
         MAX(p.start_date) AS last_project_date,
-        DATEDIFF(DAY, c.registration_date, GETDATE()) AS days_since_registration
+        DATEDIFF(CURRENT_DATE, c.registration_date) AS days_since_registration
     FROM Client c
     LEFT JOIN Project p ON c.client_id = p.client_id
     GROUP BY c.client_id, c.client_name, c.country, c.company_size, c.registration_date
@@ -359,13 +359,13 @@ SELECT
     active_projects AS 'Активних проєктів',
     total_budget AS 'Загальний бюджет',
     CASE 
-        WHEN project_count > 0 THEN CAST(completed_projects * 100.0 / project_count AS DECIMAL(5,2))
+        WHEN project_count > 0 THEN ROUND(completed_projects * 100.0 / project_count, 2)
         ELSE 0
     END AS 'Відсоток завершених (%)',
     days_since_registration AS 'Днів з реєстрації',
     CASE 
         WHEN days_since_registration > 0 AND project_count > 0 
-        THEN CAST(project_count * 365.0 / days_since_registration AS DECIMAL(5,2))
+        THEN ROUND(project_count * 365.0 / days_since_registration, 2)
         ELSE 0
     END AS 'Проєктів на рік'
 FROM ClientStats
@@ -375,7 +375,7 @@ ORDER BY total_budget DESC;
 -- ДОДАТКОВІ ПРЕДСТАВЛЕННЯ ДЛЯ АНАЛІЗУ
 -- ================================================
 
--- Представлення: Активні контрагенти з проєктами
+-- Представлення: Активні контрагенти з проектами
 CREATE VIEW v_ActiveClientsWithProjects AS
 SELECT 
     c.client_id,
