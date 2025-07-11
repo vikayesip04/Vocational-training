@@ -4,10 +4,8 @@
 
 -- Створення бази даних
 CREATE DATABASE ClarityUkraineDB;
-GO
 
 USE ClarityUkraineDB;
-GO
 
 -- ================================================
 -- a) ПОБУДОВА СТРУКТУРИ БД
