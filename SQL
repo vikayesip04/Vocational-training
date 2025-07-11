@@ -170,30 +170,25 @@ CREATE INDEX IX_Client_Active ON Client(is_active);
 
 -- Перевірка первинних ключів
 SELECT 
-    t.name AS TableName,
-    c.name AS ColumnName,
-    'PRIMARY KEY' AS KeyType
-FROM sys.tables t
-JOIN sys.key_constraints k ON t.object_id = k.parent_object_id
-JOIN sys.index_columns ic ON k.parent_object_id = ic.object_id AND k.unique_index_id = ic.index_id
-JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-WHERE k.type = 'PK'
-ORDER BY t.name;
+    TABLE_NAME AS TableName,
+    COLUMN_NAME AS ColumnName,
+    CONSTRAINT_NAME AS ConstraintName
+FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+WHERE CONSTRAINT_SCHEMA = DATABASE()
+  AND CONSTRAINT_NAME = 'PRIMARY'
+ORDER BY TABLE_NAME;
 
 -- Перевірка зовнішніх ключів
 SELECT 
-    fk.name AS ForeignKeyName,
-    tp.name AS ParentTable,
-    cp.name AS ParentColumn,
-    tr.name AS ReferencedTable,
-    cr.name AS ReferencedColumn
-FROM sys.foreign_keys fk
-JOIN sys.foreign_key_columns fkc ON fk.object_id = fkc.constraint_object_id
-JOIN sys.tables tp ON fkc.parent_object_id = tp.object_id
-JOIN sys.columns cp ON fkc.parent_object_id = cp.object_id AND fkc.parent_column_id = cp.column_id
-JOIN sys.tables tr ON fkc.referenced_object_id = tr.object_id
-JOIN sys.columns cr ON fkc.referenced_object_id = cr.object_id AND fkc.referenced_column_id = cr.column_id
-ORDER BY tp.name, fk.name;
+    TABLE_NAME AS ParentTable,
+    COLUMN_NAME AS ParentColumn,
+    CONSTRAINT_NAME AS ForeignKeyName,
+    REFERENCED_TABLE_NAME AS ReferencedTable,
+    REFERENCED_COLUMN_NAME AS ReferencedColumn
+FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+WHERE CONSTRAINT_SCHEMA = DATABASE()
+  AND REFERENCED_TABLE_NAME IS NOT NULL
+ORDER BY TABLE_NAME, CONSTRAINT_NAME;
 
 -- ================================================
 -- c) ЗАПОВНЕННЯ ТАБЛИЦЬ БД
